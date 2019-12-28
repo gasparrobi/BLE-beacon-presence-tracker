@@ -1,11 +1,8 @@
-//const Noble = require('@pruthvikar/noble');
-//const BeaconScanner = require('node-beacon-scanner');
-
 const noble = require('@abandonware/noble');
 const axios = require('axios');
 require('dotenv').config();
 
-const gracePeriod = 10000;
+const gracePeriod = process.env.GRACE_PERIOD || 10000;
 const generateBeacons = () => {
   const beaconNames = process.env.BEACONS_TO_TRACK.split(',') || ['beacon2'];  
   
@@ -19,7 +16,6 @@ const generateBeacons = () => {
 };
 
 const beacons = generateBeacons();
-console.log(beacons);
 
 noble.on('discover', function(peripheral) {
   onUpdate(peripheral.advertisement.localName);
@@ -40,20 +36,12 @@ setInterval(() => {
       console.log(`${beacon.name} has left home`);
       beacon.isPresent = false;
       console.log(beacon);
+      // todo home-assistant api
     } else if (beacon.lastSeen >= Date.now() - gracePeriod && !beacon.isPresent) {
         console.log(`${beacon.name} has arrived home`);
         beacon.isPresent = true;
         console.log(beacon);
+        // todo call home-assistant api
       }
   })
-}, 5000);
-
-//const scanner = new BeaconScanner();
-
-//scanner.onadvertisement = advertisement => {
-//  console.log(advertisement.localName);
-//}
-
-//scanner.startScan().then(() => {
-//  console.log('scanning started...');
-//}).catch(error => console.error(error));
+}, process.env.CHECK_INTERVAL || 5000);
