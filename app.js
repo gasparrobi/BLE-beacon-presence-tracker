@@ -3,9 +3,10 @@ const axios = require('axios');
 require('dotenv').config();
 
 const gracePeriod = process.env.GRACE_PERIOD || 10000;
+
 const generateBeacons = () => {
-  const beaconNames = process.env.BEACONS_TO_TRACK.split(',') || ['beacon2'];  
-  
+  const beaconNames = process.env.BEACONS_TO_TRACK.split(',') || ['beacon2'];
+
   return beaconNames.map(name => {
     return {
       name,
@@ -13,6 +14,27 @@ const generateBeacons = () => {
       isPresent: false
       };
   });
+};
+
+const onUpdate = name => {
+  if (typeof name !== 'string') return;
+  const beacon = beacons.find(beacon => name.includes(beacon.name));
+  if (!beacon) return;
+  beacon.lastSeen = Date.now();
+};
+
+const onArrival = async name => {
+  console.log(`${name} has arrived home`);
+  if (!process.env.ON_ARRIVAL_URL) return;
+  const response = await axios.get(process.env.ON_ARRIVAL_URL);
+  console.log(response.data);
+};
+
+const onLeave = async name => {
+  console.log(`${name} has left home`);
+  if (!process.env.ON_LEAVE_URL) return;
+  const response = await axios.get(process.env.ON_LEAVE_URL);
+  console.log(response.data);
 };
 
 const beacons = generateBeacons();
@@ -23,25 +45,14 @@ noble.on('discover', function(peripheral) {
 
 noble.startScanning([], true);
 
-const onUpdate = name => {
-  if (typeof name !== 'string') return;
-  const beacon = beacons.find(beacon => name.includes(beacon.name));
-  if (!beacon) return;
-  beacon.lastSeen = Date.now();
-}
-
 setInterval(() => {
   beacons.forEach(beacon => {
     if (beacon.lastSeen <= Date.now() - gracePeriod && beacon.isPresent) {
-      console.log(`${beacon.name} has left home`);
       beacon.isPresent = false;
-      console.log(beacon);
-      // todo home-assistant api
+      onLeave(beacon.name);
     } else if (beacon.lastSeen >= Date.now() - gracePeriod && !beacon.isPresent) {
-        console.log(`${beacon.name} has arrived home`);
         beacon.isPresent = true;
-        console.log(beacon);
-        // todo call home-assistant api
+        onArrival(beacon.name);
       }
   })
 }, process.env.CHECK_INTERVAL || 5000);
