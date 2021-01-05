@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@abandonware/noble": "^1.9.2-5",
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "bluetooth-hci-socket": "npm:@abandonware/bluetooth-hci-socket@^0.5.3-3",
     "dotenv": "^8.2.0"
   }
